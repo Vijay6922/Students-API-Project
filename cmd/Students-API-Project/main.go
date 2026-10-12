@@ -12,14 +12,25 @@ import (
 
 	"github.com/Vijay6922/StudentsAPIGoProject/internal/config"
 	handlers "github.com/Vijay6922/StudentsAPIGoProject/internal/http/handlers"
+	"github.com/Vijay6922/StudentsAPIGoProject/internal/storage/sqlite"
 )
 
 func main() {
+	// Load configuration
 	cfg := config.MustLoad()
 
-	router := http.NewServeMux()
-	router.HandleFunc("POST /api/students", handlers.NewStudent())
+	//database connection
+	sqliteStorage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
 
+	// Initialize HTTP handlers with storage
+	router := http.NewServeMux()
+	router.HandleFunc("POST /api/students", handlers.NewStudent(sqliteStorage))
+	router.HandleFunc("GET /api/students/{id}", handlers.GetStudent(sqliteStorage))
+
+	// Start the HTTP server
 	server := &http.Server{
 		Addr:    cfg.HTTPServer.Address,
 		Handler: router,
